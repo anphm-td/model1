@@ -1,0 +1,84 @@
+# =============================================================================
+# config.yaml — Cấu hình trung tâm của ứng dụng dự báo cổ phiếu sàn HOSE
+#
+# Quy ước:
+#   - Giá trị phần trăm viết dưới dạng số phần trăm (vd. 0.3 nghĩa là 0.3%,
+#     fee_pct: 0.2 nghĩa là 0.2%).
+#   - "Phiên" = phiên giao dịch (trading session).
+#   - Đường dẫn tính từ thư mục gốc dự án.
+# =============================================================================
+
+project:
+  name: "stock-forecast-hose"
+  title: "Dự báo cổ phiếu sàn HOSE"
+
+# --- Dữ liệu giá (src/data_sources/) ---
+# Nguồn giá: requests trực tiếp CAFEF PriceHistory (nguồn chính); fallback theo
+# thứ tự khi nguồn trước lỗi. vnstock/vnstock3/vnai KHÔNG dùng (đã chết trên
+# PyPI); không khai báo thêm nguồn nào ngoài hai nguồn dưới đây.
+data:
+  source: "cafef"                   # nguồn chính: CAFEF PriceHistory (requests trực tiếp)
+  fallback_sources: ["tcbs"]        # fallback: TCBS OHLC (epoch giây)
+  index_ticker: "VNINDEX"           # VN-Index cho MarketContext (lấy qua cùng nguồn)
+  exchange: "HOSE"                  # sàn ứng dụng
+  interval: "1D"                    # khung dữ liệu giá ngày
+  start_date: "2015-01-01"          # tải lịch sử giá từ 2015
+  cache:
+    raw: "data/raw/{ticker}.parquet"          # cache giá thẻ từ nguồn
+    processed: "data/processed/{ticker}.parquet"  # cache sau khi chuẩn hoá/feature
+
+# --- Ứng dụng ---
+default_ticker: "TCB"               # mã mặc định khi mở dashboard
+app:
+  watchlist_path: "data/watchlist.json"   # danh sách mã người dùng theo dõi
+
+  # Widget TradingView miễn phí (không cần key) — dashboard nhúng qua
+  # st.components.v1.html. enabled=false → tab "Phân tích & dự báo" quay về
+  # biểu đồ plotly nội bộ (candlestick + RSI + volume từ dữ liệu app).
+  tradingview:
+    enabled: true                   # bật widget Advanced Chart / Technical Analysis / Tape
+    exchange: "HOSE"                # tiền tố sàn trên TradingView (HOSE:TCB, HOSE:VNINDEX)
+
+  # DNSE LightSpeed API — CHỈ ĐỌC (tài khoản/vị thế/sổ lệnh, tab "Danh mục").
+  # disabled hoặc jwt_token rỗng → mục "Tài khoản DNSE" KHÔNG render gì.
+  # Token đăng nhập LightSpeed của BẠN — KHÔNG commit token thật lên git.
+  # Client (src/dnse_client.py) tuyệt đối không đặt/sửa/hủy lệnh.
+  dnse:
+    enabled: false                  # bật sau khi dán token + mã tiểu khoản
+    jwt_token: ""                   # JWT LightSpeed (đăng nhập DNSE → LightSpeed API)
+    account_no: ""                  # mã tiểu khoản, vd "0001234567"
+
+# --- Dự báo ---
+horizons: [1, 5]                    # dự báo lợi nhuận/hướng sau 1 và 5 phiên
+neutral_band_pct: 0.3               # vùng neutral ±0.3% cho phân loại hướng
+
+# --- Nhóm đặc trưng (src/features/) ---
+features:
+  feature_groups:
+    price: true                     # PriceFeatures: đặc trưng từ OHLCV
+    market_context: true            # MarketContext: bối cảnh thị trường (VN-Index, thanh khoản...)
+    news_sentiment: false           # chỗ cắm module RAG tin tức — bật sau này
+
+# --- Walk-forward validation (src/evaluation.py) ---
+walk_forward:
+  expanding_window: true            # cửa sổ mở rộng (expanding window)
+  initial_train_size: 750           # train lần đầu: 750 phiên
+  retrain_every: 21                 # retrain mỗi 21 phiên
+  embargo: 5                        # ngắt 5 phiên giữa tập train và test (chống leakage)
+  shuffle: false                    # tuyệt đối không shuffle dữ liệu chuỗi thời gian
+
+# --- Baseline bắt buộc (src/evaluation.py) ---
+baselines:
+  persistence: true                 # baseline giá: dự báo giá = giá hiện tại
+  majority_class: true              # baseline hướng: luôn chọn lớp đa số
+
+# --- Đánh giá & giao dịch (src/evaluation.py) ---
+evaluation:
+  fee_pct: 0.2                      # phí giao dịch 0.2%
+  metrics:
+    - "mae"                         # báo cáo "skill vs persistence" (MAE)
+    - "directional_accuracy"        # báo cáo "edge vs base rate" (độ chính xác hướng)
+
+# --- Lưu trữ (src/db.py) ---
+database:
+  path: "data/app.db"               # SQLite: bảng runs, predictions, outcomes

@@ -1,0 +1,37 @@
+# =============================================================================
+# requirements.txt — Ứng dụng dự báo cổ phiếu sàn HOSE
+#
+# Môi trường chạy: Anaconda HỆ THỐNG (C:/ProgramData/anaconda3/python.exe,
+# Python 3.13.9) — KHÔNG tạo venv, KHÔNG cài đè package đã có.
+# Tệp này CHỈ khai báo 2 package còn THIẾU so với môi trường hiện có:
+#   pip install -r requirements.txt
+# =============================================================================
+
+# --- Package ĐÃ CÓ SẴN trong Anaconda (bản ghi môi trường, KHÔNG pin lại) ---
+#   python          3.13.9        pandas     2.3.3
+#   numpy           2.4.6         scipy      1.16.3
+#   scikit-learn    1.9.0         matplotlib 3.11.0
+#   lightgbm        4.7.0         plotly     6.3.0
+#   statsmodels     0.14.5        streamlit  1.51.0
+#   pyarrow         21.0.0        pytest     8.4.2
+#   PyYAML          6.0.3         requests   2.32.5
+#   beautifulsoup4  4.13.5        lxml       5.3.0
+#   openpyxl        3.1.5
+# (phiên bản đọc trực tiếp từ interpreter ngày 2026-09-29)
+
+# --- 2 package còn thiếu — pin theo wheel tồn tại thực cho cp313 win_amd64 ---
+# (kiểm chứng 2026-09-29 bằng HTTP HEAD trực tiếp tới URL wheel — HTTP 200)
+
+# PyTorch bản CPU (không kéo CUDA). Wheel "+cpu" chỉ phân phối trên index CPU
+# chính thức của PyTorch nên cần --extra-index-url; bản torch trên PyPI thường
+# cho Windows kéo theo CUDA (hàng GB). Đã xác minh tồn tại:
+#   torch-2.14.0+cpu-cp313-cp313-win_amd64.whl  (HTTP 200, ~124 MB)
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.14.0+cpu
+
+# shap — giải thích độ quan trọng của đặc trưng. LƯU Ý: bản mới nhất 0.52.0
+# KHÔNG có wheel cp313 win_amd64 trên PyPI (pip sẽ rơi về build sdist, cần
+# compiler); 0.51.0 là bản mới nhất CÓ wheel:
+#   shap-0.51.0-cp313-cp313-win_amd64.whl  (HTTP 200)
+# requires_python >=3.12, yêu cầu numpy>=2 — thoả với numpy 2.4.6 hiện có.
+shap==0.51.0

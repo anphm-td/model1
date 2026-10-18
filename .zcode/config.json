@@ -1,0 +1,10 @@
+{
+  "mcp": {
+    "servers": {
+      "dnse": {
+        "type": "http",
+        "url": "https://mcp.dnse.com.vn/mcp"
+      }
+    }
+  }
+}

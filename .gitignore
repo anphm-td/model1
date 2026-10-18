@@ -1,0 +1,33 @@
+# =============================================================================
+# .gitignore — bỏ khỏi git: dữ liệu, artefact model/report, môi trường ảo
+# =============================================================================
+
+# Dữ liệu & artefact sinh ra khi chạy (cache parquet, SQLite, watchlist, model, report)
+data/
+models/
+reports/
+
+# Môi trường ảo Python
+.venv/
+
+# Cache & bản dựng Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+build/
+dist/
+
+# Notebook checkpoint
+.ipynb_checkpoints/
+
+# IDE / hệ điều hành
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Secrets của Streamlit
+.streamlit/secrets.toml
